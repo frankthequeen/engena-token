@@ -1,4 +1,4 @@
-# <img src="engena-logo.svg" alt="Engena - NGN Token">
+# <img src="engena-logo.png" alt="Engena - NGN Token">
 
 **NGN Token** is the utility token of the energy community management system of **Engena**.
 
