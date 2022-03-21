@@ -2,7 +2,7 @@
 
 /*******************************************************************************
 ***
-*** Deployed on Rinkeby testnet at 0x519971b740A66Edd196d6BD2f392aE34Fb60f082
+*** Deployed on Rinkeby testnet at 0xB92090DF29804A9fB6A08059c1d84671e2ECf5e7
 ***
 ********************************************************************************/
 
@@ -13,18 +13,16 @@ import "./Context.sol";
 import "./ERC20Burnable.sol";
 
 /**
- * @dev Token ERC20 (based on OpenZeppelin v.3.1.0), including:
+ * @dev Token ERC20 (based on OpenZeppelin v.3.1.0-20200702), including:
  *
  *  - ability for holders to burn (destroy) their tokens
  *  - ability for holders to pledge (lock over another account) their tokens
- *  - ability of creating escrow wallets for the deposit of tokens (intended for new plant projects)
- *  - a contributor role that allows to deposit tokens on escrow wallets
- *  - ability for users to view their token balance in gross form (all tokens owned) and in net form (all available tokens, i.e. tokens owned minus those pledged to third parties)
- *  - an owner address that can manage the admin role
- *  - an admin role that allows to manage other roles
- *  - a notary role that allows to finalize the transfer of pledged token and to unlock token transfers from escrow wallets
- *  - a banker role that allows for others' tokens management (transfer, burning, allowance)
  *  - a minter role that allows for token minting (creation)
+ *  - a banker role that allows for others' tokens management (transfer, burning, allowance)
+ *  - NOT MORE a contributor role that allows to deposit tokens on escrow wallets
+ *  - a notary role that allows to finalize the transfer of pledged token and to unlock token transfers from escrow wallets
+ *  - an admin role that allows to manage other roles
+ *  - an owner address that can manage the admin role
  */
 contract TokenNGN is Context, AccessControl, ERC20Burnable {
 // PLEDGE .. sender ... total amount
@@ -43,7 +41,6 @@ contract TokenNGN is Context, AccessControl, ERC20Burnable {
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BANKER_ROLE = keccak256("BANKER_ROLE");
-    bytes32 public constant CONTRIBUTOR_ROLE = keccak256("CONTRIBUTOR_ROLE");
     bytes32 public constant NOTARY_ROLE = keccak256("NOTARY_ROLE");
 
     constructor (
@@ -60,7 +57,6 @@ contract TokenNGN is Context, AccessControl, ERC20Burnable {
 
         _setupRole(MINTER_ROLE, _msgSender());
         _setupRole(BANKER_ROLE, _msgSender());
-        _setupRole(CONTRIBUTOR_ROLE, _msgSender());
         _setupRole(NOTARY_ROLE, _msgSender());
     }
 
@@ -393,7 +389,6 @@ contract TokenNGN is Context, AccessControl, ERC20Burnable {
      * - the caller must have a balance of at least `amount`.
      */
     function transferToEscrow(string memory project, address receiver, uint256 amount) public virtual returns (bool) {
-        require(hasRole(CONTRIBUTOR_ROLE, _msgSender()), "ERC20 transfer: must have contributor role to lock tokens into escrow");
         _transfer(_msgSender(), address(this), amount);
         _escrowtotal[_getProjectID(project)] = _escrowtotal[_getProjectID(project)].add(amount);
         _lock(project, _msgSender(), receiver, _escrow[_getProjectID(project)][_msgSender()][receiver].add(amount));
@@ -414,7 +409,6 @@ contract TokenNGN is Context, AccessControl, ERC20Burnable {
      * - the caller must have a quantity of locked token at least `amount`.
      */
     function withdrawFromEscrow(string memory project, address receiver, uint256 amount) public virtual returns (bool) {
-        require(hasRole(CONTRIBUTOR_ROLE, _msgSender()), "ERC20 transfer: must have contributor role to unlock tokens from escrow");
         _transfer(address(this), _msgSender(), amount);
         _escrowtotal[_getProjectID(project)] = _escrowtotal[_getProjectID(project)].sub(amount);
         _lock(project, _msgSender(), receiver, _escrow[_getProjectID(project)][_msgSender()][receiver].sub(amount, "ERC20: transfer amount exceeds locked fund"));
